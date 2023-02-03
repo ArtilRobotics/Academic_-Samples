@@ -1,61 +1,147 @@
-import threading
+import mariadb
+from threading import Thread
 from tkinter import *
 import tkinter as tk
-import serial
-root = tk.Tk()
-COM = "COM2"
-ser = serial.Serial(port=COM, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, timeout=2)
-ser.isOpen()
-msg = ""
-import time
-
-# read Serial
-def ReadSerial():
-    global msg
-    msg = ""
-    msg = ser.readline()[:-2].decode("utf-8")
-    if msg != "":
-        print(msg)
-        
-    return msg
-# write Serial
-def WriteSerial(sendmsg):
-    print("send")
-    ser.write(bytes(sendmsg, 'utf-8'))
-    ReadSerial()
+import serial,time,collections
 
 
-# Tkinter
-root.title("WIP NAME")
-root.geometry("650x400")
-inputData = Entry(root, text="<Slave1&p>") # input for enter the message to write
-entrymsg = inputData.get() # get the massage
-buttonMsg = Button(root, text="send", command = lambda: WriteSerial(inputData.get())) # create a send button for send the message
-readData = Label(root, text=msg) # show message in Tkinter
-ReadSerial()
-# show items
-inputData.grid()
-readData.grid()
-buttonMsg.grid()
 
 
-# GUI thread
-def TkinterGui():
-    while 1==1:
-        global msg
-        entrymsg = inputData.get()
+isRun = True  
+isReceiving= False  
+pot = 0.0
+ilu = 0.0
+amax = 0.0
+amin = 0.0
+#Serial
+try:
+    arduino = serial.Serial("COM2", 9600 , timeout=1)       
+except:
+    print("Error de coneccion con el puerto")
 
+def DatosA():
+    time.sleep(1)
+    arduino.reset_input_buffer()
+    while (isRun):
+        global isReceive
+        global datos,pot,ilu,amax,amin
+        datos = arduino.readline().decode()
+        datos = datos.rstrip('\n')
+        print(datos)
+        if(datos != "0"):
+            DATASPLIT = datos.split(",") 
+            isReceive = True
+            pot = DATASPLIT[0]
+            ilu = DATASPLIT[1]
+            amax = DATASPLIT[2]
+            amin = int(DATASPLIT[3])
 
-# Serial thread
-def SerialProgram():
-    while 1==1:
-        ReadSerial()
-        readData.update_idletasks()
+thread = Thread(target = DatosA)
+thread.start() 
 
+#database
+try:
+    conexion = mariadb.connect(
+        user="root",
+        password="",
+        host="127.0.0.1",
+        port=3306,
+        database="incubadora"
+    )
+    cursor = conexion.cursor()
 
-x = threading.Thread(target=TkinterGui, args=())
-y = threading.Thread(target=SerialProgram, args=())
-x.start()
-y.start()
+except mariadb.Error as error:
+    print(f"Error al conectar con la base de datos: {error}")
+
+def toDataBase():
+    ilumincacion = ilu
+    alert_max = amax
+    alert_min = amin
+    try:
+        cursor.execute("INSERT INTO datos "
+                       "(iluminacion,max,min)"
+                       "VALUES (?,?,?)",
+                        (ilumincacion,alert_max,alert_min))
+        conexion.commit()
+    except mariadb.Error as error_registro:
+        print(f"Error en el registro: {error}")
+
+#GUI
+root = Tk()
+root.title('Incubadora')
+root['background'] = 'light green'
+
+def clicked(value):
+    {
+        print(value)
+    }
+
+def slide_values(sliderE):
+    print (sliderE.get())   
+
+def update_labels(lb1,lb2,lb3,lb4):
+    def count():
+        texto = str(amax)+'%'
+        lb1.config(text=texto)
+        texto = str(amin)+'%'
+        lb2.config(text=texto)
+        texto = str(ilu)+'%'
+        lb3.config(text=texto)
+        texto = str(pot)+' grados'
+        lb4.config(text=texto)
+        lb1.after(1000, count)
+    count()
+
+titulo = Label(root, text="Interfaz Python",
+               font="Roboto 16 bold", width=15, bg='light green')
+etiqueta1 = Label(root, text="Configuración de",
+                  font="Roboto 14", width=17, anchor=SW, bg='light green')
+etiqueta2 = Label(root, text="iluminación máx. o min",
+                  font="Roboto 14", width=17, anchor=NW, bg='light green')
+etiqueta3 = Label(root, text="Estado de iluminación:",
+                  font="Roboto 14", width=17, anchor=W, bg='light green')
+etiqueta4 = Label(root, text="Ángulo de motor:",
+                  font="Roboto 14", width=17, anchor=W, bg='light green')
+
+ilumMax = Label(root, font="Roboto 14",
+                bg="yellow", width=12, borderwidth=5)
+ilumMin = Label(root, text="40%", font="Roboto 14",
+                bg="yellow", width=12, borderwidth=5)
+
+ilumState = Label(root, text="87%", font="Roboto 14",
+                  bg="cyan", width=12, borderwidth=5)
+angState = Label(root, text="30 Grados", font="Roboto 14",
+                 bg="cyan", width=14, borderwidth=5)
+
+r = IntVar()
+r.set(1)
+check1 = Radiobutton(root, text="Potenciómetro", font="Roboto 14", width=15, indicatoron=0,
+                     variable=r, value=0, command=lambda: clicked(r.get()), anchor=W)
+check2 = Radiobutton(root, text="Slider", font="Roboto 14", width=15, indicatoron=0,
+                     variable=r, value=1, command=lambda: clicked(r.get()), anchor=W)
+slider1 = Scale(root, from_=0, to=180,  length=300,
+                border=2, orient=HORIZONTAL,command=lambda: slide_values(slider1.get()))
+
+titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+etiqueta1 .grid(row=1, column=0, padx=10, pady=0, sticky=S)
+etiqueta2 .grid(row=2, column=0, padx=10, pady=0, sticky=N)
+etiqueta3 .grid(row=3, column=0, padx=10, pady=10)
+etiqueta4 .grid(row=4, column=0, padx=10, pady=10)
+
+ilumMax.grid(row=1, column=1, padx=10, pady=2, sticky=W)
+ilumMin.grid(row=2, column=1, padx=10, pady=2, sticky=W)
+ilumState.grid(row=3, column=1, padx=10, pady=10, sticky=W)
+angState.grid(row=4, column=1, padx=10, pady=10, sticky=W)
+
+check1.grid(row=5, column=0, padx=10, pady=2, sticky=E)
+check2.grid(row=6, column=0, padx=10, pady=2, sticky=E)
+
+slider1.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
+
+update_labels(ilumMax,ilumMin,ilumState,angState)
+
+check1.deselect()
+check2.select()
 
 root.mainloop()
+arduino.close()
