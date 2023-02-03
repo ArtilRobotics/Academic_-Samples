@@ -1,28 +1,26 @@
 import threading
 from tkinter import *
 import tkinter as tk
-import serial
-root = tk.Tk()
-COM = "COM2"
-ser = serial.Serial(port=COM, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, timeout=2)
-ser.isOpen()
-msg = ""
+import serial,time
 
-# read Serial
-def ReadSerial():
-    global msg
-    msg = ""
-    msg = ser.readline()[:-2].decode("utf-8")
-    if msg != "":
-        print(msg)
-        
-    return msg
-# write Serial
-def WriteSerial(sendmsg):
-    print("send")
-    ser.write(bytes(sendmsg, 'utf-8'))
-    ReadSerial()
+#Serial
+try:
+    arduino = serial.Serial("COM2", 9600 , timeout=1)  
+    isRun = True  
+    isReceiving= False       
+except:
+    print("Error de coneccion con el puerto")
 
+def DatosA():
+    time.sleep(1)
+    arduino.reset_input_buffer()
+    while (isRun):
+        global isReceive
+        global datos 
+        datos = float(arduino.readline().decode('utf-8'))
+        isReceive = True
+
+#GUI
 root = Tk()
 root.title('Incubadora')
 root['background'] = 'light green'
@@ -114,23 +112,5 @@ counter_label2(angState)
 check1.deselect()
 check2.select()
 
-# GUI thread
-def TkinterGui():
-    while 1==1:
-        global msg
-        entrymsg = inputData.get()
-
-
-# Serial thread
-def SerialProgram():
-    while 1==1:
-        ReadSerial()
-        readData.update_idletasks()
-
-
-x = threading.Thread(target=TkinterGui, args=())
-y = threading.Thread(target=SerialProgram, args=())
-x.start()
-y.start()
-
 root.mainloop()
+arduino.close()

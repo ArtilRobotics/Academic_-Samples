@@ -2,13 +2,14 @@
 
 • Sistema de control de iluminación y Angulo de giro para una incubadora.
 
-Materiales
--1 Arduino Uno
--1 Servo Motor
--1 Sensor de Luz LDR
--4 Botones
--1 Potenciometro
--2 Leds (Rojo y Verde)
+Materiales|
+------------- 
+* 1 Arduino Uno
+* 1 Servo Motor
+* 1 Sensor de Luz LDR
+* 4 Botones
+* 1 Potenciometro
+* 2 Leds (Rojo y Verde)
 
 Control de iluminación:
 El porcentaje de iluminacion será dado por el sensor Idr, el led rojo sera la señal de máxima iluminación y verde minima iluminación. 
