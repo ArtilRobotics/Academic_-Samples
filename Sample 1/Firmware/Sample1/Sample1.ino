@@ -44,24 +44,33 @@ void loop() {
   if (Serial.available())
   {
     strT = Serial.readStringUntil('\n');
-    Serial.println(strT);
+    //Serial.println(strT);
     for (int i = 0; i < dataLengthT; i++)
     {
       int index = strT.indexOf(separatorT);
       datoT[i] = strT.substring(0, index).toInt();
       strT = strT.substring(index + 1);
     }
-    for (int i = 0; i < dataLengthT; i++)
+    /*for (int i = 0; i < dataLengthT; i++)
     {
       Serial.print("Dato "); 
       Serial.print(i);
       Serial.print("="); 
       Serial.print(datoT[i]);
-    }
-    Serial.println(" ");
-
-    Pot_Input=datoT[0];
+    }*/
+     Pot_Input=datoT[0];
     Slider_input=datoT[1];
+    
+    Serial.print(valpot);
+  Serial.print(",");
+  Serial.print(valLDR);
+  Serial.print(",");
+  Serial.print(LDRMax);
+  Serial.print(",");
+  Serial.print(LDRMin);
+  Serial.println("");
+
+
   }
 
   
@@ -126,7 +135,7 @@ void loop() {
     {digitalWrite(GreenLed_pin, LOW);
     }
 
-  Serial.print(valpot);
+  /*Serial.print(valpot);
   Serial.print(",");
   Serial.print(valLDR);
   Serial.print(",");
@@ -134,5 +143,5 @@ void loop() {
   Serial.print(",");
   Serial.print(LDRMin);
   Serial.println("");
-  delay(100);                           // waits for the servo to get there
+  delay(100);           */                // waits for the servo to get there
 }
