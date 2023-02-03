@@ -2,53 +2,53 @@ import mariadb
 from threading import Thread
 from tkinter import *
 import tkinter as tk
-import serial,time,collections
+import serial
+import time
+import collections
 
-
-
-
-  
 pot = 0.0
 ilu = 0.0
 amax = 0.0
 amin = 0.0
-slivalues =0
-servo_control =0 
-#Serial
+slivalues = 0
+servo_control = 0
+
+# Serial
 try:
-    arduino = serial.Serial("COM2", 9600 , timeout=1)       
+    arduino = serial.Serial("COM2", 9600, timeout=1)
 except:
     print("Error de coneccion con el puerto")
 
+
 def DatosA():
-    
-    #arduino.reset_input_buffer()
+
+    # arduino.reset_input_buffer()
     while (True):
-        time.sleep(1)   
-        global servo_control,slivalues 
+        time.sleep(1)
+        global servo_control, slivalues
         msg = str(servo_control)+","+str(slivalues)
-        print(msg)
-        arduino.write((msg +'\n').encode())
+        # print(msg)
+        arduino.write((msg + '\n').encode())
         arduino.flush()
-        global datos,pot,ilu,amax,amin
+        global datos, pot, ilu, amax, amin
         datos = arduino.readline().decode()
         datos = datos.rstrip('\n')
-        #print(datos)
+        print(datos)
 
-        if(datos != None):
-            DATASPLIT = datos.split(",") 
+        if (datos != None):
+            DATASPLIT = datos.split(",")
             isReceive = True
             pot = DATASPLIT[0]
             ilu = DATASPLIT[1]
             amax = DATASPLIT[2]
             amin = int(DATASPLIT[3])
             toDataBase()
-        
 
-thread = Thread(target = DatosA)
-thread.start() 
 
-#database
+thread = Thread(target=DatosA)
+thread.start()
+
+# database
 try:
     conexion = mariadb.connect(
         user="root",
@@ -62,6 +62,7 @@ try:
 except mariadb.Error as error:
     print(f"Error al conectar con la base de datos: {error}")
 
+
 def toDataBase():
     ilumincacion = ilu
     alert_max = amax
@@ -70,15 +71,17 @@ def toDataBase():
         cursor.execute("INSERT INTO datos "
                        "(iluminacion,max,min)"
                        "VALUES (?,?,?)",
-                        (ilumincacion,alert_max,alert_min))
+                       (ilumincacion, alert_max, alert_min))
         conexion.commit()
     except mariadb.Error as error_registro:
         print(f"Error en el registro: {error}")
 
-#GUI
+
+# GUI
 root = Tk()
 root.title('Incubadora')
 root['background'] = 'light green'
+
 
 def clicked(value):
     global servo_control
@@ -87,10 +90,11 @@ def clicked(value):
 
 def slide_values(event):
     global slivalues
-    slivalues=slider1.get()
-    print 
+    slivalues = slider1.get()
+    print
 
-def update_labels(lb1,lb2,lb3,lb4):
+
+def update_labels(lb1, lb2, lb3, lb4):
     def count():
         texto = str(amax)+'%'
         lb1.config(text=texto)
@@ -102,6 +106,7 @@ def update_labels(lb1,lb2,lb3,lb4):
         lb4.config(text=texto)
         lb1.after(1000, count)
     count()
+
 
 titulo = Label(root, text="Interfaz Python",
                font="Roboto 16 bold", width=15, bg='light green')
@@ -131,7 +136,7 @@ check1 = Radiobutton(root, text="Potenciómetro", font="Roboto 14", width=15, in
 check2 = Radiobutton(root, text="Slider", font="Roboto 14", width=15, indicatoron=0,
                      variable=r, value=0, command=lambda: clicked(r.get()), anchor=W)
 slider1 = Scale(root, from_=0, to=180,  length=300,
-                border=2, orient=HORIZONTAL,command=slide_values)
+                border=2, orient=HORIZONTAL, command=slide_values)
 
 titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 etiqueta1 .grid(row=1, column=0, padx=10, pady=0, sticky=S)
@@ -149,7 +154,7 @@ check2.grid(row=6, column=0, padx=10, pady=2, sticky=E)
 
 slider1.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
 
-update_labels(ilumMax,ilumMin,ilumState,angState)
+update_labels(ilumMax, ilumMin, ilumState, angState)
 
 check1.deselect()
 check2.select()

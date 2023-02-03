@@ -18,4 +18,15 @@ El porcentaje de max y minima iluminacion sera configurado por el usuario atrave
 En la interfaz de python se visualiza la configuracion max y min. Una con checkbuttom para control por potenciometro o por slider del Angulo del motor.
 Se envia a la base de datos: % de iluminacion, valor para alarma de valor max y alarma de valor min
 
-Simulacion: https://wokwi.com/projects/355571767522030593
+Conecciones y Simulacion: https://wokwi.com/projects/355571767522030593
+
+Python Libraries
+------------- 
+* mariadb
+```
+    pip install mariadb
+```
+* pyserial
+```
+    pip install pyserial
+```
