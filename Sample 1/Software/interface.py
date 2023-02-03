@@ -1,5 +1,27 @@
+import threading
 from tkinter import *
-import mariadb
+import tkinter as tk
+import serial
+root = tk.Tk()
+COM = "COM2"
+ser = serial.Serial(port=COM, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, timeout=2)
+ser.isOpen()
+msg = ""
+
+# read Serial
+def ReadSerial():
+    global msg
+    msg = ""
+    msg = ser.readline()[:-2].decode("utf-8")
+    if msg != "":
+        print(msg)
+        
+    return msg
+# write Serial
+def WriteSerial(sendmsg):
+    print("send")
+    ser.write(bytes(sendmsg, 'utf-8'))
+    ReadSerial()
 
 root = Tk()
 root.title('Incubadora')
@@ -11,7 +33,9 @@ def clicked(value):
         print(value)
     }
 
+
 counter = 0
+
 
 def counter_label(label):
     def count():
@@ -22,7 +46,9 @@ def counter_label(label):
         label.after(1000, count)
     count()
 
+
 counter2 = 0
+
 
 def counter_label2(label):
     def count2():
@@ -32,6 +58,7 @@ def counter_label2(label):
         label.config(text=texto2)
         label.after(1000, count2)
     count2()
+
 
 titulo = Label(root, text="Interfaz Python",
                font="Roboto 16 bold", width=15, bg='light green')
@@ -56,7 +83,6 @@ angState = Label(root, text="30 Grados", font="Roboto 14",
 
 r = IntVar()
 r.set(1)
-
 check1 = Radiobutton(root, text="Potenciómetro", font="Roboto 14", width=15, indicatoron=0,
                      variable=r, value=0, command=lambda: clicked(r.get()), anchor=W)
 check2 = Radiobutton(root, text="Slider", font="Roboto 14", width=15, indicatoron=0,
@@ -65,8 +91,8 @@ slider1 = Scale(root, from_=0, to=120,  length=300,
                 border=2, orient=HORIZONTAL)
 
 titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
-etiqueta1 .grid(row=1, column=0, padx=10, pady=0,sticky=S)
-etiqueta2 .grid(row=2, column=0, padx=10, pady=0,sticky=N)
+etiqueta1 .grid(row=1, column=0, padx=10, pady=0, sticky=S)
+etiqueta2 .grid(row=2, column=0, padx=10, pady=0, sticky=N)
 etiqueta3 .grid(row=3, column=0, padx=10, pady=10)
 etiqueta4 .grid(row=4, column=0, padx=10, pady=10)
 
@@ -87,5 +113,24 @@ counter_label2(angState)
 
 check1.deselect()
 check2.select()
+
+# GUI thread
+def TkinterGui():
+    while 1==1:
+        global msg
+        entrymsg = inputData.get()
+
+
+# Serial thread
+def SerialProgram():
+    while 1==1:
+        ReadSerial()
+        readData.update_idletasks()
+
+
+x = threading.Thread(target=TkinterGui, args=())
+y = threading.Thread(target=SerialProgram, args=())
+x.start()
+y.start()
 
 root.mainloop()
