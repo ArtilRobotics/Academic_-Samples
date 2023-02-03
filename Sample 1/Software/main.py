@@ -7,12 +7,13 @@ import serial,time,collections
 
 
 
-isRun = True  
-isReceiving= False  
+  
 pot = 0.0
 ilu = 0.0
 amax = 0.0
 amin = 0.0
+slivalues =0
+servo_control =0 
 #Serial
 try:
     arduino = serial.Serial("COM2", 9600 , timeout=1)       
@@ -20,21 +21,28 @@ except:
     print("Error de coneccion con el puerto")
 
 def DatosA():
-    time.sleep(1)
-    arduino.reset_input_buffer()
-    while (isRun):
-        global isReceive
+    
+    #arduino.reset_input_buffer()
+    while (True):
+        time.sleep(1)   
+        global servo_control,slivalues 
+        msg = str(servo_control)+","+str(slivalues)
+        print(msg)
+        arduino.write((msg +'\n').encode())
+        arduino.flush()
         global datos,pot,ilu,amax,amin
         datos = arduino.readline().decode()
         datos = datos.rstrip('\n')
-        print(datos)
-        if(datos != "0"):
+        #print(datos)
+
+        if(datos != None):
             DATASPLIT = datos.split(",") 
             isReceive = True
             pot = DATASPLIT[0]
             ilu = DATASPLIT[1]
             amax = DATASPLIT[2]
             amin = int(DATASPLIT[3])
+        
 
 thread = Thread(target = DatosA)
 thread.start() 
@@ -72,12 +80,14 @@ root.title('Incubadora')
 root['background'] = 'light green'
 
 def clicked(value):
-    {
-        print(value)
-    }
+    global servo_control
+    servo_control = value
 
-def slide_values(sliderE):
-    print (sliderE.get())   
+
+def slide_values(event):
+    global slivalues
+    slivalues=slider1.get()
+    print 
 
 def update_labels(lb1,lb2,lb3,lb4):
     def count():
@@ -114,13 +124,13 @@ angState = Label(root, text="30 Grados", font="Roboto 14",
                  bg="cyan", width=14, borderwidth=5)
 
 r = IntVar()
-r.set(1)
+r.set(0)
 check1 = Radiobutton(root, text="Potenciómetro", font="Roboto 14", width=15, indicatoron=0,
-                     variable=r, value=0, command=lambda: clicked(r.get()), anchor=W)
-check2 = Radiobutton(root, text="Slider", font="Roboto 14", width=15, indicatoron=0,
                      variable=r, value=1, command=lambda: clicked(r.get()), anchor=W)
+check2 = Radiobutton(root, text="Slider", font="Roboto 14", width=15, indicatoron=0,
+                     variable=r, value=0, command=lambda: clicked(r.get()), anchor=W)
 slider1 = Scale(root, from_=0, to=180,  length=300,
-                border=2, orient=HORIZONTAL,command=lambda: slide_values(slider1.get()))
+                border=2, orient=HORIZONTAL,command=slide_values)
 
 titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 etiqueta1 .grid(row=1, column=0, padx=10, pady=0, sticky=S)
