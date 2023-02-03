@@ -42,6 +42,7 @@ def DatosA():
             ilu = DATASPLIT[1]
             amax = DATASPLIT[2]
             amin = int(DATASPLIT[3])
+            toDataBase()
         
 
 thread = Thread(target = DatosA)
